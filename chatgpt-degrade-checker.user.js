@@ -4,13 +4,13 @@
 // @homepage     https://github.com/KoriIku/chatgpt-degrade-checker
 // @author       KoriIku
 // @icon         data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCI+PHBhdGggZmlsbD0iIzJjM2U1MCIgZD0iTTMyIDJDMTUuNDMyIDIgMiAxNS40MzIgMiAzMnMxMy40MzIgMzAgMzAgMzAgMzAtMTMuNDMyIDMwLTMwUzQ4LjU2OCAyIDMyIDJ6bTAgNTRjLTEzLjIzMyAwLTI0LTEwLjc2Ny0yNC0yNFMxOC43NjcgOCAzMiA4czI0IDEwLjc2NyAyNCAyNFM0NS4yMzMgNTYgMzIgNTZ6Ii8+PHBhdGggZmlsbD0iIzNkYzJmZiIgZD0iTTMyIDEyYy0xMS4wNDYgMC0yMCA4Ljk1NC0yMCAyMHM4Ljk1NCAyMCAyMCAyMCAyMC04Ljk1NCAyMC0yMFM0My4wNDYgMTIgMzIgMTJ6bTAgMzZjLTguODM3IDAtMTYtNy4xNjMtMTYtMTZzNy4xNjMtMTYgMTYtMTYgMTYgNy4xNjMgMTYgMTZTNDAuODM3IDQ4IDMyIDQ4eiIvPjxwYXRoIGZpbGw9IiMwMGZmN2YiIGQ9Ik0zMiAyMGMtNi42MjcgMC0xMiA1LjM3My0xMiAxMnM1LjM3MyAxMiAxMiAxMiAxMi01LjM3MyAxMi0xMlMzOC42MjcgMjAgMzIgMjB6bTAgMjBjLTQuNDE4IDAtOC0zLjU4Mi04LThzMy41ODItOCA4LTggOCAzLjU4MiA4IDgtMy41ODIgOC04IDh6Ii8+PGNpcmNsZSBmaWxsPSIjZmZmIiBjeD0iMzIiIGN5PSIzMiIgcj0iNCIvPjwvc3ZnPg==
-// @version      1.91
+// @version      1.92
 // @description  由于 ChatGPT 会对某些 ip 进行无提示的服务降级，此脚本用于检测你的 ip 在 ChatGPT 数据库中的风险等级。
 // @match        *://chatgpt.com/*
 // @grant        none
-// @downloadURL  https://update.greasyfork.org/scripts/516051/ChatGPT%E9%99%8D%E7%BA%A7%E6%A3%80%E6%B5%8B.user.js
-// @updateURL    https://update.greasyfork.org/scripts/516051/ChatGPT%E9%99%8D%E7%BA%A7%E6%A3%80%E6%B5%8B.user.js
 // @license AGPLv3
+// @downloadURL https://update.greasyfork.org/scripts/516051/ChatGPT%E9%99%8D%E7%BA%A7%E6%A3%80%E6%B5%8B.user.js
+// @updateURL https://update.greasyfork.org/scripts/516051/ChatGPT%E9%99%8D%E7%BA%A7%E6%A3%80%E6%B5%8B.meta.js
 // ==/UserScript==
 
 (function() {
@@ -243,10 +243,17 @@
 
     // 拦截 fetch 请求
     const originalFetch = window.fetch;
-    window.fetch = async function(resource, options) {
-        const response = await originalFetch(resource, options);
-
-        if ((resource.includes('/backend-api/sentinel/chat-requirements')||resource.includes('backend-anon/sentinel/chat-requirements')) && options.method === 'POST') {
+    window.fetch = async function(...args) {
+        const response = await originalFetch(...args);
+        console.log(args)
+        let url = args[0];
+        let method = args[1]?.method;
+        if (typeof url == "object") {
+            url = args[0].url;
+            method = args[0].method;
+        }
+        console.log(url, method);
+        if ((url.includes('/backend-api/sentinel/chat-requirements')||url.includes('backend-anon/sentinel/chat-requirements')) && method === 'POST') {
             const clonedResponse = response.clone();
             clonedResponse.json().then(data => {
                 const difficulty = data.proofofwork ? data.proofofwork.difficulty : 'N/A';
